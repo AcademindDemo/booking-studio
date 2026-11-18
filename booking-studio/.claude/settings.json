@@ -1,0 +1,17 @@
+{
+	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+	"enabledMcpjsonServers": ["studio-booking"],
+	"permissions": {
+		"allow": [
+			"mcp__studio-booking__list_classes",
+			"mcp__studio-booking__get_class_status",
+			"mcp__studio-booking__find_member_reservations",
+			"mcp__studio-booking__create_reservation",
+			"mcp__studio-booking__cancel_reservation",
+			"Skill(booking)",
+			"Skill(daily-check)",
+			"Edit(reports/**)"
+		],
+		"deny": ["Read(data/**)", "Edit(data/**)", "WebFetch", "WebSearch"]
+	}
+}

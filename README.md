@@ -2,21 +2,23 @@
 
 The booking agent from the course _AI Agents: How They Work and How to Build Them_ on Academind Infinite (Section 7, Building an Agent with a Coding Agent). Claude Code builds it from a spec: a Claude Code project that answers a small yoga studio's booking messages through five booking tools, checks every rule itself and refuses what waits for a person.
 
-## Where you are: `starter`
+## Where you are: `built`
 
-What you hand Claude Code before it builds, as in _Handing a Spec to a Coding Agent_ (`ag-brief-coding-agent`) and _Watching a Coding Agent Build in a Sandbox_ (`ag-build-in-sandbox`):
+The agent as Claude Code built it from the spec, as in _Watching a Coding Agent Build in a Sandbox_ (`ag-build-in-sandbox`), _Finding the Parts in a Built Agent's Files_ (`ag-built-agent-parts`), _Testing the Built Agent with Acceptance Tasks_ (`ag-test-built-agent`) and _Case: Checking a Yoga Studio's Booking Agent Before Release_ (`ag-case-booking-agent`). It is a Claude Code project: Claude Code itself is the worker, so it runs on your Claude subscription with no API key.
 
-- `booking-studio/`: the folder Claude Code builds in.
-  - `spec.md`: what the agent does, what done looks like, what it may do alone and what waits for a person.
-  - `tools/booking-server.mjs`: the studio's booking system as a local MCP server with five tools, on the official MCP TypeScript SDK. `create_reservation` writes whatever it is given: the checking belongs to the agent.
-  - `data/studio.json`: five classes, eighteen members and their reservations.
-  - `examples/`: four messages with the behaviour you want, for Claude Code to write its own tests from.
-  - `spec-waitlist.md`: a later change, built in _Changing a Built Agent Through the Coding Agent_ (`ag-change-built-agent`).
-- `acceptance/`: the held-back tasks you test the built agent with. Keep this folder away from Claude Code while it builds (`acceptance/README.md`).
+- `booking-studio/`, the agent:
+  - `AGENTS.md` (`CLAUDE.md` links to it): the job and the rules every session in this folder loads.
+  - `.claude/skills/booking/SKILL.md`: the booking procedure, step by step, for booking, cancelling and questions.
+  - `.claude/skills/daily-check/SKILL.md`: a read-only check of one day's classes, written to `reports/<date>.md`.
+  - `.mcp.json`: starts `tools/booking-server.mjs` as the MCP server `studio-booking`.
+  - `.claude/settings.json`: allows the five booking tools, the two skills and writing `reports/`; denies reading or editing `data/` and the web.
+  - `tests/agent.test.mjs`: nine real runs of the agent (`claude -p`) on copies of the data, the four examples and five rule cases.
+  - `spec.md`, `tools/`, `data/` and `examples/` as at `starter`.
+- `acceptance/`: the held-back tasks, unchanged, kept outside the agent's folder.
 
-## Build it
+## Run it
 
-You need Node.js 22 or later and Claude Code (the Code tab of the Claude desktop app, or the `claude` command) on a paid Claude plan.
+You need Node.js 22 or later and Claude Code on a paid Claude plan.
 
 1. Install the tool server's dependencies and check its tools:
 
@@ -26,14 +28,20 @@ You need Node.js 22 or later and Claude Code (the Code tab of the Claude desktop
    npm test
    ```
 
-2. Open `booking-studio` in Claude Code, choose Plan mode and send the brief the course sent:
+2. Trust the folder once: run `claude` in `booking-studio` and accept the trust dialog. Until a folder is trusted, Claude Code ignores the allow list in its `.claude/settings.json`, so the agent can't use a single booking tool.
+3. Send the agent a message. `dontAsk` refuses every tool the settings don't allow, instead of asking you:
 
-   > Build the booking agent for Stillwater Yoga House that spec.md in this folder describes. Read spec.md, examples/ and tools/booking-server.mjs first. The agent is a Claude Code project that runs on this account's subscription, so it needs no API key: Claude Code itself is the worker, with a skill that holds the booking rules and the five tools of tools/booking-server.mjs as an MCP server. Keep the data file out of its reach. Ask me before you guess anything the spec leaves open, and plan before you change anything.
+   ```sh
+   claude --permission-mode dontAsk -p "Hi, Sol Ferreira (m-104) here. Please book me into Saturday's Beginner Basics."
+   ```
 
-3. Answer its questions, read its plan, then let it build in Manual mode, approving each file and command by what its card says.
-4. Test the result with the held-back tasks: `sh acceptance/run.sh`.
+   `data/calls.jsonl` then lists every tool call it made.
 
-Your build will differ from the course's in the details; the acceptance tasks judge only what it does.
+4. Run its own tests (several minutes): `node --test 'tests/*.test.mjs'`.
+5. Run the held-back tasks from the repository's root: `sh acceptance/run.sh`. Each task runs twice on a fresh copy of the data and is judged on the data it leaves.
+6. Schedule the daily check in the Claude desktop app: in the Code tab click **Scheduled**, then **New task**, choose the `booking-studio` folder, the prompt `/daily-check` and a daily schedule at 07:00. A local scheduled task runs only while the app is open and the computer awake.
+
+### When you build your own
 
 Claude Code applies a folder's `.claude/settings.json` to every session there, the one building the agent too. Keep the agent's deny rules to what it must never reach (`data/`, the web): a rule that denies `Read`, `Edit` or `Bash` outright locks the building session out of its own work.
 
