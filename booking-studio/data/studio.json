@@ -1,0 +1,260 @@
+{
+	"classes": [
+		{
+			"id": "c-mon-vinyasa",
+			"when": "Monday 09:00",
+			"name": "Vinyasa Flow",
+			"capacity": 12
+		},
+		{
+			"id": "c-tue-yin",
+			"when": "Tuesday 18:30",
+			"name": "Yin Yoga",
+			"capacity": 10
+		},
+		{
+			"id": "c-wed-hatha",
+			"when": "Wednesday 07:30",
+			"name": "Sunrise Hatha",
+			"capacity": 6
+		},
+		{
+			"id": "c-thu-restorative",
+			"when": "Thursday 19:00",
+			"name": "Restorative",
+			"capacity": 8
+		},
+		{
+			"id": "c-sat-basics",
+			"when": "Saturday 10:00",
+			"name": "Beginner Basics",
+			"capacity": 10
+		}
+	],
+	"members": [
+		{
+			"id": "m-101",
+			"name": "Anke Brandt"
+		},
+		{
+			"id": "m-102",
+			"name": "Ravi Menon"
+		},
+		{
+			"id": "m-103",
+			"name": "Ida Kowal"
+		},
+		{
+			"id": "m-104",
+			"name": "Sol Ferreira"
+		},
+		{
+			"id": "m-105",
+			"name": "Hana Ito"
+		},
+		{
+			"id": "m-106",
+			"name": "Tobias Lund"
+		},
+		{
+			"id": "m-107",
+			"name": "Elif Demir"
+		},
+		{
+			"id": "m-108",
+			"name": "Priya Nair"
+		},
+		{
+			"id": "m-109",
+			"name": "Kofi Mensah"
+		},
+		{
+			"id": "m-110",
+			"name": "Greta Voss"
+		},
+		{
+			"id": "m-111",
+			"name": "Omar Haddad"
+		},
+		{
+			"id": "m-112",
+			"name": "Noor Haddad"
+		},
+		{
+			"id": "m-113",
+			"name": "Lena Petrov"
+		},
+		{
+			"id": "m-114",
+			"name": "Jonas Aaltonen"
+		},
+		{
+			"id": "m-115",
+			"name": "Leo Marchetti"
+		},
+		{
+			"id": "m-116",
+			"name": "Mina Sato"
+		},
+		{
+			"id": "m-117",
+			"name": "Dara Okafor"
+		},
+		{
+			"id": "m-118",
+			"name": "Tamsin Ode"
+		}
+	],
+	"reservations": [
+		{
+			"id": "r-001",
+			"classId": "c-mon-vinyasa",
+			"memberId": "m-103",
+			"status": "booked"
+		},
+		{
+			"id": "r-002",
+			"classId": "c-mon-vinyasa",
+			"memberId": "m-104",
+			"status": "booked"
+		},
+		{
+			"id": "r-003",
+			"classId": "c-mon-vinyasa",
+			"memberId": "m-105",
+			"status": "booked"
+		},
+		{
+			"id": "r-004",
+			"classId": "c-mon-vinyasa",
+			"memberId": "m-106",
+			"status": "booked"
+		},
+		{
+			"id": "r-005",
+			"classId": "c-mon-vinyasa",
+			"memberId": "m-108",
+			"status": "booked"
+		},
+		{
+			"id": "r-006",
+			"classId": "c-tue-yin",
+			"memberId": "m-101",
+			"status": "booked"
+		},
+		{
+			"id": "r-007",
+			"classId": "c-tue-yin",
+			"memberId": "m-102",
+			"status": "booked"
+		},
+		{
+			"id": "r-008",
+			"classId": "c-tue-yin",
+			"memberId": "m-110",
+			"status": "booked"
+		},
+		{
+			"id": "r-009",
+			"classId": "c-tue-yin",
+			"memberId": "m-111",
+			"status": "booked"
+		},
+		{
+			"id": "r-010",
+			"classId": "c-wed-hatha",
+			"memberId": "m-101",
+			"status": "booked"
+		},
+		{
+			"id": "r-011",
+			"classId": "c-wed-hatha",
+			"memberId": "m-104",
+			"status": "booked"
+		},
+		{
+			"id": "r-012",
+			"classId": "c-wed-hatha",
+			"memberId": "m-105",
+			"status": "booked"
+		},
+		{
+			"id": "r-013",
+			"classId": "c-wed-hatha",
+			"memberId": "m-106",
+			"status": "booked"
+		},
+		{
+			"id": "r-014",
+			"classId": "c-wed-hatha",
+			"memberId": "m-108",
+			"status": "booked"
+		},
+		{
+			"id": "r-015",
+			"classId": "c-wed-hatha",
+			"memberId": "m-110",
+			"status": "booked"
+		},
+		{
+			"id": "r-016",
+			"classId": "c-thu-restorative",
+			"memberId": "m-102",
+			"status": "booked"
+		},
+		{
+			"id": "r-017",
+			"classId": "c-thu-restorative",
+			"memberId": "m-103",
+			"status": "booked"
+		},
+		{
+			"id": "r-018",
+			"classId": "c-thu-restorative",
+			"memberId": "m-104",
+			"status": "booked"
+		},
+		{
+			"id": "r-019",
+			"classId": "c-thu-restorative",
+			"memberId": "m-105",
+			"status": "booked"
+		},
+		{
+			"id": "r-020",
+			"classId": "c-thu-restorative",
+			"memberId": "m-106",
+			"status": "booked"
+		},
+		{
+			"id": "r-021",
+			"classId": "c-thu-restorative",
+			"memberId": "m-108",
+			"status": "booked"
+		},
+		{
+			"id": "r-022",
+			"classId": "c-thu-restorative",
+			"memberId": "m-110",
+			"status": "booked"
+		},
+		{
+			"id": "r-023",
+			"classId": "c-sat-basics",
+			"memberId": "m-102",
+			"status": "booked"
+		},
+		{
+			"id": "r-024",
+			"classId": "c-sat-basics",
+			"memberId": "m-111",
+			"status": "booked"
+		},
+		{
+			"id": "r-025",
+			"classId": "c-sat-basics",
+			"memberId": "m-116",
+			"status": "booked"
+		}
+	]
+}
