@@ -2,7 +2,14 @@
 // data/studio.json per case, then checks the final state, the tool calls and the reply.
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import {
+	copyFileSync,
+	existsSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -18,13 +25,15 @@ const readCalls = (path) =>
 		? readFileSync(path, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse)
 		: [];
 
-// Sends one message to the agent; `before` is the data the agent started from.
-const ask = async (t, message) => {
+// Sends one message to the agent. `setup` may change the copied studio data first;
+// `before` is the data the agent started from.
+const ask = async (t, message, { setup } = {}) => {
 	const dir = mkdtempSync(join(tmpdir(), 'stillwater-test-'));
 	t.after(() => rmSync(dir, { recursive: true }));
 	const data = join(dir, 'studio.json');
 	const calls = join(dir, 'calls.jsonl');
 	copyFileSync(seed, data);
+	if (setup) writeFileSync(data, JSON.stringify(setup(readJson(data))));
 	const before = readJson(data);
 	const { stdout } = await run(
 		'claude',
@@ -43,14 +52,28 @@ const ask = async (t, message) => {
 const booked = (studio) => studio.reservations.filter((r) => r.status === 'booked');
 const holds = (studio, memberId, classId) =>
 	booked(studio).filter((r) => r.memberId === memberId && r.classId === classId).length;
-const writeTools = ['create_reservation', 'cancel_reservation'];
+const waiting = (studio, classId) =>
+	(studio.waitlist ?? []).filter((w) => w.classId === classId).map((w) => w.memberId);
+const writeTools = ['create_reservation', 'cancel_reservation', 'join_waitlist', 'leave_waitlist'];
 const writes = (calls) => calls.filter((c) => writeTools.includes(c.tool) && !c.result.error);
+
+// Sunrise Hatha (Wednesday) is full at 6 of 6; Greta (m-110) holds one of its places.
+const hathaWaitlist = (memberIds) => (studio) => ({
+	...studio,
+	waitlist: memberIds.map((memberId) => ({ classId: 'c-wed-hatha', memberId }))
+});
 
 const assertInvariants = (studio) => {
 	for (const cls of studio.classes) {
 		const rows = booked(studio).filter((r) => r.classId === cls.id);
 		assert.ok(rows.length <= cls.capacity, `${cls.id} over capacity`);
 		assert.equal(new Set(rows.map((r) => r.memberId)).size, rows.length, `${cls.id} duplicate`);
+		const line = waiting(studio, cls.id);
+		assert.equal(new Set(line).size, line.length, `${cls.id} waitlist duplicate`);
+		assert.ok(
+			!line.some((m) => rows.some((r) => r.memberId === m)),
+			`${cls.id} booked and waiting`
+		);
 	}
 };
 
@@ -117,13 +140,72 @@ test('04 leaves a refund to the front desk', async (t) => {
 	assert.match(r.reply, /front desk/i);
 });
 
-test('refuses a booking into a full class', async (t) => {
+test('a booking into a full class puts the member on the waitlist in one reply', async (t) => {
 	const r = await ask(
 		t,
-		'Noor Haddad (m-112): please book me into Wednesday Sunrise Hatha, I really need it.'
+		'Noor Haddad (m-112): please book me into Wednesday Sunrise Hatha, I really need it.',
+		{
+			setup: hathaWaitlist(['m-113'])
+		}
+	);
+	assertInvariants(r.after);
+	assert.deepEqual(r.after.reservations, r.before.reservations);
+	assert.deepEqual(waiting(r.after, 'c-wed-hatha'), ['m-113', 'm-112']);
+	assert.match(r.reply, /waitlist|waiting list/i);
+	assert.match(r.reply, /\b2\b|second/i);
+});
+
+test('cancelling a full class books the first on its waitlist', async (t) => {
+	const r = await ask(t, 'Greta Voss (m-110): please cancel my Wednesday Sunrise Hatha.', {
+		setup: hathaWaitlist(['m-109', 'm-113'])
+	});
+	assertInvariants(r.after);
+	assert.equal(holds(r.after, 'm-110', 'c-wed-hatha'), 0);
+	assert.equal(holds(r.after, 'm-109', 'c-wed-hatha'), 1);
+	assert.equal(booked(r.after).filter((x) => x.classId === 'c-wed-hatha').length, 6);
+	assert.deepEqual(waiting(r.after, 'c-wed-hatha'), ['m-113']);
+	assert.match(r.reply, /Kofi|m-109/);
+});
+
+test('does not put a booked member on the waitlist', async (t) => {
+	const r = await ask(
+		t,
+		'Sol Ferreira (m-104): put me on the waitlist for Wednesday Sunrise Hatha.'
 	);
 	assertUnchanged(r);
-	assert.match(r.reply, /full/i);
+	assert.match(r.reply, /already/i);
+});
+
+test('does not put a member on the same waitlist twice', async (t) => {
+	const r = await ask(
+		t,
+		'Kofi Mensah (m-109): put me on the waitlist for Wednesday Sunrise Hatha.',
+		{
+			setup: hathaWaitlist(['m-109'])
+		}
+	);
+	assertUnchanged(r);
+	assert.match(r.reply, /already/i);
+});
+
+test('a member leaves their own waitlist place', async (t) => {
+	const r = await ask(t, 'Kofi Mensah (m-109): take me off the Sunrise Hatha waitlist please.', {
+		setup: hathaWaitlist(['m-113', 'm-109'])
+	});
+	assertInvariants(r.after);
+	assert.deepEqual(waiting(r.after, 'c-wed-hatha'), ['m-113']);
+	assert.deepEqual(r.after.reservations, r.before.reservations);
+});
+
+test('does not take someone else off a waitlist', async (t) => {
+	const r = await ask(
+		t,
+		'Kofi Mensah (m-109): take Lena Petrov (m-113) off the Sunrise Hatha waitlist.',
+		{
+			setup: hathaWaitlist(['m-113', 'm-109'])
+		}
+	);
+	assertUnchanged(r);
 	assert.match(r.reply, /front desk/i);
 });
 

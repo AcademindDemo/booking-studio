@@ -35,19 +35,23 @@ const call = async (name, args = {}) => {
 };
 const studio = () => JSON.parse(readFileSync(data, 'utf8'));
 
-test('lists the five booking tools', async () => {
+test('lists the booking and waitlist tools', async () => {
 	const { tools } = await client.listTools();
 	assert.deepEqual(tools.map((t) => t.name).sort(), [
 		'cancel_reservation',
 		'create_reservation',
 		'find_member_reservations',
 		'get_class_status',
+		'get_waitlist',
+		'join_waitlist',
+		'leave_waitlist',
 		'list_classes'
 	]);
 	const readOnly = tools.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name);
 	assert.deepEqual(readOnly.sort(), [
 		'find_member_reservations',
 		'get_class_status',
+		'get_waitlist',
 		'list_classes'
 	]);
 });
@@ -85,6 +89,52 @@ test('an unknown id is a tool error and writes nothing', async () => {
 	const result = await call('create_reservation', { memberId: 'm-999', classId: 'c-tue-yin' });
 	assert.equal(result.isError, true);
 	assert.equal(readFileSync(data, 'utf8'), before);
+});
+
+test('join_waitlist refuses a class with a free place', async () => {
+	const result = await call('join_waitlist', { memberId: 'm-112', classId: 'c-tue-yin' });
+	assert.equal(result.isError, true);
+	assert.equal(studio().waitlist, undefined);
+});
+
+test('join_waitlist queues members of a full class in order', async () => {
+	assert.equal(
+		(await call('join_waitlist', { memberId: 'm-112', classId: 'c-wed-hatha' })).value.position,
+		1
+	);
+	assert.equal(
+		(await call('join_waitlist', { memberId: 'm-113', classId: 'c-wed-hatha' })).value.position,
+		2
+	);
+	const { value } = await call('get_waitlist', { classId: 'c-wed-hatha' });
+	assert.deepEqual(
+		value.map((w) => [w.position, w.memberId]),
+		[
+			[1, 'm-112'],
+			[2, 'm-113']
+		]
+	);
+});
+
+test('join_waitlist refuses a member already waiting or booked', async () => {
+	assert.equal(
+		(await call('join_waitlist', { memberId: 'm-112', classId: 'c-wed-hatha' })).isError,
+		true
+	);
+	assert.equal(
+		(await call('join_waitlist', { memberId: 'm-110', classId: 'c-wed-hatha' })).isError,
+		true
+	);
+	assert.equal(studio().waitlist.length, 2);
+});
+
+test('leave_waitlist takes a member off and keeps the order', async () => {
+	await call('leave_waitlist', { memberId: 'm-112', classId: 'c-wed-hatha' });
+	assert.deepEqual(studio().waitlist, [{ classId: 'c-wed-hatha', memberId: 'm-113' }]);
+	assert.equal(
+		(await call('leave_waitlist', { memberId: 'm-112', classId: 'c-wed-hatha' })).isError,
+		true
+	);
 });
 
 test('every call is logged with its arguments and result', async () => {

@@ -8,6 +8,9 @@
 			"mcp__studio-booking__find_member_reservations",
 			"mcp__studio-booking__create_reservation",
 			"mcp__studio-booking__cancel_reservation",
+			"mcp__studio-booking__get_waitlist",
+			"mcp__studio-booking__join_waitlist",
+			"mcp__studio-booking__leave_waitlist",
 			"Skill(booking)",
 			"Skill(daily-check)",
 			"Edit(reports/**)"

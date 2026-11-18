@@ -1,20 +1,26 @@
 # Stillwater Yoga House booking agent
 
-The booking agent from the course _AI Agents: How They Work and How to Build Them_ on Academind Infinite (Section 7, Building an Agent with a Coding Agent). Claude Code builds it from a spec: a Claude Code project that answers a small yoga studio's booking messages through five booking tools, checks every rule itself and refuses what waits for a person.
+The booking agent from the course _AI Agents: How They Work and How to Build Them_ on Academind Infinite (Section 7, Building an Agent with a Coding Agent). Claude Code builds it from a spec: a Claude Code project that answers a small yoga studio's booking messages through the studio's booking tools, checks every rule itself and refuses what waits for a person.
 
-## Where you are: `built`
+## Where you are: `waitlist`
 
-The agent as Claude Code built it from the spec, as in _Watching a Coding Agent Build in a Sandbox_ (`ag-build-in-sandbox`), _Finding the Parts in a Built Agent's Files_ (`ag-built-agent-parts`), _Testing the Built Agent with Acceptance Tasks_ (`ag-test-built-agent`) and _Case: Checking a Yoga Studio's Booking Agent Before Release_ (`ag-case-booking-agent`). It is a Claude Code project: Claude Code itself is the worker, so it runs on your Claude subscription with no API key.
+The agent after the waitlist change, as in _Changing a Built Agent Through the Coding Agent_ (`ag-change-built-agent`). `booking-studio/spec-waitlist.md` went to Claude Code as a change request. The waitlist checks w1 to w3 from _Testing the Built Agent with Acceptance Tasks_ (`ag-test-built-agent`) were written before the change, and every task and test passed after it. It is a Claude Code project: Claude Code itself is the worker, so it runs on your Claude subscription with no API key.
 
-- `booking-studio/`, the agent:
-  - `AGENTS.md` (`CLAUDE.md` links to it): the job and the rules every session in this folder loads.
-  - `.claude/skills/booking/SKILL.md`: the booking procedure, step by step, for booking, cancelling and questions.
-  - `.claude/skills/daily-check/SKILL.md`: a read-only check of one day's classes, written to `reports/<date>.md`.
-  - `.mcp.json`: starts `tools/booking-server.mjs` as the MCP server `studio-booking`.
-  - `.claude/settings.json`: allows the five booking tools, the two skills and writing `reports/`; denies reading or editing `data/` and the web.
-  - `tests/agent.test.mjs`: nine real runs of the agent (`claude -p`) on copies of the data, the four examples and five rule cases.
-  - `spec.md`, `tools/`, `data/` and `examples/` as at `starter`.
-- `acceptance/`: the held-back tasks, unchanged, kept outside the agent's folder.
+What the change touched in `booking-studio/`:
+
+- `spec.md`: a Waitlists section, and the waitlist actions among what the agent may do alone.
+- `tools/booking-server.mjs`: three waitlist tools on top of `data/studio.json` (`get_waitlist`, `join_waitlist` and `leave_waitlist`), with the waitlist kept in the data file as an ordered list. `tools/booking-server.test.mjs` checks them.
+- `.claude/skills/booking/SKILL.md`: a full class puts the member on its waitlist in the same reply, and a cancellation books the first member waiting.
+- `AGENTS.md`: the waitlist among the changes the agent may make.
+- `.claude/settings.json`: the three waitlist tools allowed.
+- `tests/agent.test.mjs`: five waitlist cases added, fourteen runs in all.
+
+Everything else is as at `built`:
+
+- the daily check (`.claude/skills/daily-check/SKILL.md`);
+- `.mcp.json`;
+- the data;
+- the held-back tasks in `acceptance/`.
 
 ## Run it
 
@@ -38,7 +44,14 @@ You need Node.js 22 or later and Claude Code on a paid Claude plan.
    `data/calls.jsonl` then lists every tool call it made.
 
 4. Run its own tests (several minutes): `node --test 'tests/*.test.mjs'`.
-5. Run the held-back tasks from the repository's root: `sh acceptance/run.sh`. Each task runs twice on a fresh copy of the data and is judged on the data it leaves.
+5. Run the held-back tasks from the repository's root. Run the waitlist checks together with a1 to a5, since a change in one part can break another:
+
+   ```sh
+   sh acceptance/run.sh booking-studio "w1-join-full w2-promote w3-no-duplicate a1-simple-booking a2-full-class a3-double-booking a4-last-place a5-move"
+   ```
+
+   Each task runs twice on a fresh copy of the data and is judged on the data it leaves.
+
 6. Schedule the daily check in the Claude desktop app: in the Code tab click **Scheduled**, then **New task**, choose the `booking-studio` folder, the prompt `/daily-check` and a daily schedule at 07:00. A local scheduled task runs only while the app is open and the computer awake.
 
 ### When you build your own

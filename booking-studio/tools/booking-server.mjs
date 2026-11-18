@@ -1,5 +1,7 @@
 // Stillwater Yoga House's booking system as a local MCP server (stdio).
-// Its five tools read and write data/studio.json and log every call to data/calls.jsonl.
+// Its five booking tools and the three waitlist tools added for the waitlist change read and
+// write data/studio.json and log every call to data/calls.jsonl. The waitlist lives in
+// studio.json as an ordered list of { classId, memberId }, oldest first.
 // create_reservation checks nothing on purpose: the checking belongs to the agent.
 // Run: node tools/booking-server.mjs (after npm install). BOOKING_DATA and BOOKING_CALLS
 // point it at another data file and log, e.g. a copy for a test run.
@@ -17,6 +19,8 @@ const load = () => JSON.parse(readFileSync(dataPath, 'utf8'));
 const save = (studio) => writeFileSync(dataPath, `${JSON.stringify(studio, null, 2)}\n`);
 const booked = (studio, classId) =>
 	studio.reservations.filter((r) => r.classId === classId && r.status === 'booked');
+const waitlistOf = (studio, classId) =>
+	(studio.waitlist ?? []).filter((w) => w.classId === classId);
 
 const classId = z.string().describe('Class id from list_classes, such as c-tue-yin');
 const memberId = z.string().describe('Member id, such as m-104');
@@ -88,6 +92,55 @@ const tools = {
 			reservation.status = 'cancelled';
 			save(studio);
 			return reservation;
+		}
+	},
+	get_waitlist: {
+		title: 'Get waitlist',
+		description:
+			"List one class's waitlist in the order members joined; the first entry is next in line.",
+		inputSchema: z.object({ classId }),
+		annotations: { ...local, readOnlyHint: true },
+		run: (studio, args) => {
+			if (!studio.classes.some((c) => c.id === args.classId))
+				return { error: `No class ${args.classId}` };
+			return waitlistOf(studio, args.classId).map((w, i) => ({ position: i + 1, ...w }));
+		}
+	},
+	join_waitlist: {
+		title: 'Join a waitlist',
+		description:
+			"Put a member at the end of a full class's waitlist. Refuses if the class has a free place, the member is booked in it or already on its waitlist. A waitlist place holds no booking.",
+		inputSchema: z.object({ memberId, classId }),
+		annotations: { ...local, readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+		run: (studio, args) => {
+			if (!studio.members.some((m) => m.id === args.memberId))
+				return { error: `No member ${args.memberId}` };
+			const cls = studio.classes.find((c) => c.id === args.classId);
+			if (!cls) return { error: `No class ${args.classId}` };
+			const rows = booked(studio, args.classId);
+			if (rows.length < cls.capacity) return { error: `${args.classId} has a free place` };
+			if (rows.some((r) => r.memberId === args.memberId))
+				return { error: `${args.memberId} is booked in ${args.classId}` };
+			const line = waitlistOf(studio, args.classId);
+			if (line.some((w) => w.memberId === args.memberId))
+				return { error: `${args.memberId} is already on the waitlist of ${args.classId}` };
+			const entry = { classId: args.classId, memberId: args.memberId };
+			studio.waitlist = [...(studio.waitlist ?? []), entry];
+			save(studio);
+			return { position: line.length + 1, ...entry };
+		}
+	},
+	leave_waitlist: {
+		title: 'Leave a waitlist',
+		description: "Take a member off a class's waitlist.",
+		inputSchema: z.object({ memberId, classId }),
+		annotations: { ...local, readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+		run: (studio, args) => {
+			const entry = waitlistOf(studio, args.classId).find((w) => w.memberId === args.memberId);
+			if (!entry) return { error: `${args.memberId} is not on the waitlist of ${args.classId}` };
+			studio.waitlist = studio.waitlist.filter((w) => w !== entry);
+			save(studio);
+			return entry;
 		}
 	}
 };
